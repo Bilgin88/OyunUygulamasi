@@ -286,7 +286,7 @@ const CanvasBoard = ({
     };
 
     // Handle Image Assets (like Cars)
-    if (typeof type === 'string' && type.startsWith('/')) {
+    if (typeof type === 'string' && type.includes('.png')) {
         try {
             const FabricImageClass = fabric.FabricImage || fabric.Image;
             shape = await FabricImageClass.fromURL(type);
@@ -352,7 +352,7 @@ const CanvasBoard = ({
   };
 
   useEffect(() => {
-    if (canvasInstance && (selectedTool === 'shapes' || selectedTool === 'stickers' || selectedTool === 'cars') && selectedShape && shapeTrigger > 0) {
+    if (canvasInstance && (selectedTool === 'shapes' || selectedTool === 'stickers' || selectedTool === 'cars' || selectedTool === 'mosques') && selectedShape && shapeTrigger > 0) {
         addShape(selectedShape);
     }
   }, [shapeTrigger]);

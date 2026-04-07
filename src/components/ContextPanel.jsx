@@ -60,20 +60,32 @@ const ContextPanel = ({
   ];
 
   const cars = [
-    { id: '/assets/cars/megane.png', label: 'Renault Megane', icon: '🚗' },
-    { id: '/assets/cars/doblo.png', label: 'Fiat Doblo', icon: '🚐' },
-    { id: '/assets/cars/toyota.png', label: 'Toyota Corolla', icon: '🚘' },
-    { id: '/assets/cars/ferrari.png', label: 'Ferrari', icon: '🏎️' },
-    { id: '/assets/cars/volvo.png', label: 'Volvo XC90', icon: '🚙' },
-    { id: '/assets/cars/porsche.png', label: 'Porsche 911', icon: '🏎️' },
-    { id: '/assets/cars/jeep.png', label: 'Jeep Wrangler', icon: '🚜' },
+    { id: 'assets/cars/megane.png', label: 'Renault Megane', icon: '🚗' },
+    { id: 'assets/cars/doblo.png', label: 'Fiat Doblo', icon: '🚐' },
+    { id: 'assets/cars/toyota.png', label: 'Toyota Corolla', icon: '🚘' },
+    { id: 'assets/cars/ferrari.png', label: 'Ferrari', icon: '🏎️' },
+    { id: 'assets/cars/volvo.png', label: 'Volvo XC90', icon: '🚙' },
+    { id: 'assets/cars/porsche.png', label: 'Porsche 911', icon: '🏎️' },
+    { id: 'assets/cars/jeep.png', label: 'Jeep Wrangler', icon: '🚜' },
+    { id: 'images/volvo_truck_sticker_1775569646823.png', label: 'Volvo Kamyon', icon: '🚛' },
+    { id: 'images/scania_truck_sticker_1775569664955.png', label: 'Scania Kamyon', icon: '🚛' },
+    { id: 'images/mercedes_truck_sticker_1775569680863.png', label: 'Mercedes Actros', icon: '🚛' },
+    { id: 'images/bmc_truck_sticker_1775569701759.png', label: 'BMC Kamyon', icon: '🚛' },
+  ];
+
+  const mosques = [
+    { id: 'images/sultanahmet_mosque_sticker_1775569090127.png', label: 'Sultanahmet Camii', icon: '🕌' },
+    { id: 'images/ayasofya_mosque_sticker_1775569104944.png', label: 'Ayasofya Camii', icon: '🕌' },
+    { id: 'images/selimiye_mosque_sticker_1775569038884.png', label: 'Selimiye Camii', icon: '🕌' },
+    { id: 'images/suleymaniye_mosque_sticker_1775569053335.png', label: 'Süleymaniye Camii', icon: '🕌' },
+    { id: 'images/ortakoy_mosque_sticker_1775569067386.png', label: 'Ortaköy Camii', icon: '🕌' },
   ];
 
   const colors = [
     '#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff', '#ffffff', '#000000'
   ];
 
-  if (selectedTool !== 'shapes' && selectedTool !== 'brush' && selectedTool !== 'stickers' && selectedTool !== 'cars') return null;
+  if (selectedTool !== 'shapes' && selectedTool !== 'brush' && selectedTool !== 'stickers' && selectedTool !== 'cars' && selectedTool !== 'mosques') return null;
 
   return (
     <>
@@ -83,7 +95,8 @@ const ContextPanel = ({
           {selectedTool === 'brush' && <StarIcon sx={{ fontSize: 18 }} />}
           {selectedTool === 'stickers' && '⚽'} 
           {selectedTool === 'cars' && '🚗'}
-          {selectedTool === 'shapes' ? 'Şekil Ayarları' : selectedTool === 'brush' ? 'Fırça Ayarları' : selectedTool === 'cars' ? 'Araba Seçenekleri' : 'Çıkartma Ayarları'}
+          {selectedTool === 'mosques' && '🕌'}
+          {selectedTool === 'shapes' ? 'Şekil Ayarları' : selectedTool === 'brush' ? 'Fırça Ayarları' : selectedTool === 'cars' ? 'Araba Seçenekleri' : selectedTool === 'mosques' ? 'Cami Seçenekleri' : 'Çıkartma Ayarları'}
         </Typography>
 
         <Divider sx={{ mb: 2, opacity: 0.1, backgroundColor: 'white' }} />
@@ -133,12 +146,12 @@ const ContextPanel = ({
         )}
       </div>
 
-      {(selectedTool === 'shapes' || selectedTool === 'stickers' || selectedTool === 'cars') && (
+      {(selectedTool === 'shapes' || selectedTool === 'stickers' || selectedTool === 'cars' || selectedTool === 'mosques') && (
         <div className="shapes-list">
           <Typography variant="overline" sx={{ px: 1, mb: 1, opacity: 0.5, display: 'block' }}>
-            {selectedTool === 'shapes' ? 'TÜM ŞEKİLLER' : selectedTool === 'stickers' ? 'ÇIKARTMALAR' : 'ARABALAR'}
+            {selectedTool === 'shapes' ? 'TÜM ŞEKİLLER' : selectedTool === 'stickers' ? 'ÇIKARTMALAR' : selectedTool === 'cars' ? 'ARABALAR' : 'CAMİLER'}
           </Typography>
-          {(selectedTool === 'shapes' ? shapes : selectedTool === 'stickers' ? stickers : cars).map(item => (
+          {(selectedTool === 'shapes' ? shapes : selectedTool === 'stickers' ? stickers : selectedTool === 'cars' ? cars : mosques).map(item => (
             <div 
               key={item.id} 
               className={`shape-item ${(selectedShape === item.id || selectedShape === item.icon) ? 'active' : ''}`}
@@ -149,7 +162,7 @@ const ContextPanel = ({
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 24, fontSize: selectedTool === 'stickers' ? '1.2rem' : 'inherit' }}>
-                {selectedTool === 'cars' && typeof item.icon === 'string' && item.id.startsWith('/') ? <img src={item.id} style={{ width: '20px' }} alt={item.label} /> : item.icon}
+                {(selectedTool === 'cars' || selectedTool === 'mosques') && typeof item.icon === 'string' && item.id.includes('.png') ? <img src={item.id} style={{ width: '20px' }} alt={item.label} /> : item.icon}
               </div>
               <Typography variant="body2">{item.label}</Typography>
             </div>

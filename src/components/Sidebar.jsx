@@ -23,6 +23,7 @@ const Sidebar = ({ selectedTool, setSelectedTool, isPanelOpen, setIsPanelOpen, h
     { id: 'shapes', icon: <StarIcon />, label: 'Şekiller' },
     { id: 'stickers', icon: <MoodIcon />, label: 'Çıkartmalar' },
     { id: 'cars', icon: <DirectionsCarIcon />, label: 'Arabalar' },
+    { id: 'mosques', icon: '🕌', label: 'Camiler' },
     { id: 'text', icon: <TitleIcon />, label: 'Metin' },
     { id: 'fill', icon: <FormatColorFillIcon />, label: 'Dolgu' },
   ];
@@ -34,9 +35,9 @@ const Sidebar = ({ selectedTool, setSelectedTool, isPanelOpen, setIsPanelOpen, h
       setIsPanelOpen(!isPanelOpen);
     } else {
       setSelectedTool(id);
-      // Auto-open panel for tools with lists (shapes, stickers, cars), 
+      // Auto-open panel for tools with lists (shapes, stickers, cars, mosques), 
       // but keep it closed for drawing (brush) to keep screen clear.
-      if (['shapes', 'stickers', 'cars'].includes(id)) {
+      if (['shapes', 'stickers', 'cars', 'mosques'].includes(id)) {
         setIsPanelOpen(true);
       } else {
         setIsPanelOpen(false);
