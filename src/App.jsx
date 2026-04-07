@@ -1,10 +1,28 @@
 import React, { useState, useEffect } from 'react';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
-import { CssBaseline, Container, Dialog, DialogTitle, DialogContent, TextField, Button, Box, Typography, MenuItem, Select, FormControl, InputLabel, Tooltip, Zoom } from '@mui/material';
+import { CssBaseline, Container, Dialog, DialogTitle, DialogContent, TextField, Button, Box, Typography, MenuItem, Select, FormControl, InputLabel, Tooltip, Zoom, Alert } from '@mui/material';
 import './index.css';
 import CanvasBoard from './components/CanvasBoard';
 import Sidebar from './components/Sidebar';
 import ContextPanel from './components/ContextPanel';
+
+// Error boundary to prevent full page crash
+class ErrorBoundary extends React.Component {
+  constructor(props) { super(props); this.state = { hasError: false, error: null }; }
+  static getDerivedStateFromError(error) { return { hasError: true, error }; }
+  componentDidCatch(error, info) { console.error('Canvas Error:', error, info); }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <Box sx={{ p: 4, textAlign: 'center' }}>
+          <Alert severity="error" sx={{ mb: 2 }}>Bir hata oluştu: {this.state.error?.message}</Alert>
+          <Button variant="contained" onClick={() => this.setState({ hasError: false })}>Tekrar Dene</Button>
+        </Box>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 const theme = createTheme({
   palette: {
@@ -42,6 +60,7 @@ function App() {
   const [slope, setSlope] = useState(50);
   const [isFillEnabled, setIsFillEnabled] = useState(false);
   const [isPanelOpen, setIsPanelOpen] = useState(false);
+  const [canvasMode, setCanvasMode] = useState('white');
 
   // Global Keyboard Shortcuts
   useEffect(() => {
@@ -94,7 +113,13 @@ function App() {
   };
 
   const handleNew = () => setClearTrigger(prev => prev + 1);
-  const handleSave = () => setSaveTrigger(prev => prev + 1);
+  const handleSave = () => {
+    setSaveTrigger(prev => prev + 1);
+  };
+
+  const toggleCanvasMode = () => {
+    setCanvasMode(prev => prev === 'white' ? 'grid' : prev === 'grid' ? 'lines' : 'white');
+  };
 
   return (
     <ThemeProvider theme={theme}>
@@ -108,6 +133,7 @@ function App() {
           setIsPanelOpen={setIsPanelOpen}
           handleNew={handleNew}
           handleSave={handleSave}
+          toggleCanvasMode={toggleCanvasMode}
         />
 
         {isPanelOpen && (
@@ -183,19 +209,22 @@ function App() {
           </header>
 
           <Box className="canvas-area-wrapper">
-            <CanvasBoard 
-              selectedTool={selectedTool} 
-              selectedShape={selectedShape}
-              selectedColor={selectedColor}
-              brushSize={brushSize}
-              sides={sides}
-              slope={slope}
-              isFillEnabled={isFillEnabled}
-              clearTrigger={clearTrigger}
-              saveTrigger={saveTrigger}
-              shapeTrigger={shapeTrigger}
-              setIsPanelOpen={setIsPanelOpen}
-            />
+            <ErrorBoundary>
+              <CanvasBoard 
+                selectedTool={selectedTool} 
+                selectedShape={selectedShape}
+                selectedColor={selectedColor}
+                brushSize={brushSize}
+                sides={sides}
+                slope={slope}
+                isFillEnabled={isFillEnabled}
+                canvasMode={canvasMode}
+                clearTrigger={clearTrigger}
+                saveTrigger={saveTrigger}
+                shapeTrigger={shapeTrigger}
+                setIsPanelOpen={setIsPanelOpen}
+              />
+            </ErrorBoundary>
           </Box>
         </Box>
 

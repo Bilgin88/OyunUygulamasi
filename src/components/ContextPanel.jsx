@@ -1,5 +1,6 @@
-import React from 'react';
-import { Box, Typography, Slider, Switch, FormControlLabel, Select, MenuItem, Divider } from '@mui/material';
+import React, { useState } from 'react';
+import { Box, Typography, Slider, Switch, FormControlLabel, Select, MenuItem, Divider, TextField, Button, CircularProgress } from '@mui/material';
+import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import StarIcon from '@mui/icons-material/Star';
 import SquareIcon from '@mui/icons-material/Square';
 import ChangeHistoryIcon from '@mui/icons-material/ChangeHistory'; // Triangle
@@ -24,6 +25,165 @@ const ContextPanel = ({
   setShapeTrigger,
   onTextClick
 }) => {
+  const [aiPrompt, setAiPrompt] = useState('');
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  const emojiMap = {
+    'kedi': '🐱', 'cat': '🐱', 'köpek': '🐶', 'kopek': '🐶', 'dog': '🐶',
+    'at': '🐴', 'horse': '🐴', 'inek': '🐄', 'cow': '🐄', 'tavuk': '🐔', 'chicken': '🐔',
+    'ördek': '🦆', 'ordek': '🦆', 'duck': '🦆', 'tavşan': '🐰', 'tavsan': '🐰', 'rabbit': '🐰',
+    'ayı': '🐻', 'ayi': '🐻', 'bear': '🐻', 'kaplan': '🐯', 'tiger': '🐯',
+    'aslan': '🦁', 'lion': '🦁', 'fil': '🐘', 'elephant': '🐘',
+    'zürafa': '🦒', 'zurafa': '🦒', 'giraffe': '🦒', 'maymun': '🐵', 'monkey': '🐵',
+    'penguen': '🐧', 'penguin': '🐧', 'kaplumbağa': '🐢', 'kaplumbaga': '🐢', 'turtle': '🐢',
+    'balık': '🐟', 'balik': '🐟', 'fish': '🐟', 'yunus': '🐬', 'dolphin': '🐬',
+    'balina': '🐳', 'whale': '🐳', 'köpekbalığı': '🦈', 'shark': '🦈',
+    'kartal': '🦅', 'eagle': '🦅', 'baykuş': '🦉', 'baykus': '🦉', 'owl': '🦉',
+    'papağan': '🦜', 'papagan': '🦜', 'parrot': '🦜', 'yılan': '🐍', 'yilan': '🐍', 'snake': '🐍',
+    'kurbağa': '🐸', 'kurbaga': '🐸', 'frog': '🐸', 'arı': '🐝', 'ari': '🐝', 'bee': '🐝',
+    'kelebek': '🦋', 'butterfly': '🦋', 'örümcek': '🕷️', 'orumcek': '🕷️', 'spider': '🕷️',
+    'ejderha': '🐲', 'dragon': '🐲', 'unicorn': '🦄', 'kirpi': '🦔', 'hedgehog': '🦔',
+    'sincap': '🐿️', 'squirrel': '🐿️', 'tilki': '🦊', 'fox': '🦊', 'kurt': '🐺', 'wolf': '🐺',
+    'panda': '🐼', 'domuz': '🐷', 'pig': '🐷', 'koala': '🐨', 'kanguru': '🦘', 'kangaroo': '🦘',
+    'araba': '🚗', 'car': '🚗',
+    'uçak': '✈️', 'ucak': '✈️', 'airplane': '✈️', 'plane': '✈️',
+    'yolcu uçağı': '✈️', 'yolcu ucagi': '✈️', 'passenger airplane': '✈️',
+    'helikopter': '🚁', 'helicopter': '🚁', 'roket': '🚀', 'rocket': '🚀',
+    'gemi': '🚢', 'ship': '🚢', 'tren': '🚂', 'train': '🚂',
+    'otobüs': '🚌', 'otobus': '🚌', 'bus': '🚌', 'kamyon': '🚛', 'truck': '🚛',
+    'bisiklet': '🚲', 'bicycle': '🚲', 'motosiklet': '🏍️', 'motorcycle': '🏍️',
+    'ambulans': '🚑', 'ambulance': '🚑', 'itfaiye': '🚒', 'fire truck': '🚒',
+    'polis': '🚔', 'police': '🚔', 'taksi': '🚕', 'taxi': '🚕',
+    'uzay gemisi': '🛸', 'spaceship': '🛸', 'ufo': '🛸',
+    'güneş': '☀️', 'gunes': '☀️', 'sun': '☀️',
+    'ay': '🌙', 'moon': '🌙', 'yıldız': '⭐', 'yildiz': '⭐', 'star': '⭐',
+    'ağaç': '🌳', 'agac': '🌳', 'tree': '🌳', 'çiçek': '🌸', 'cicek': '🌸', 'flower': '🌸',
+    'lale': '🌷', 'tulip': '🌷', 'gül': '🌹', 'rose': '🌹',
+    'gökkuşağı': '🌈', 'gokkusagi': '🌈', 'rainbow': '🌈', 'bulut': '☁️', 'cloud': '☁️',
+    'yağmur': '🌧️', 'yagmur': '🌧️', 'rain': '🌧️', 'kar': '❄️', 'snow': '❄️',
+    'şimşek': '⚡', 'simsek': '⚡', 'lightning': '⚡', 'dağ': '⛰️', 'dag': '⛰️', 'mountain': '⛰️',
+    'volkan': '🌋', 'volcano': '🌋', 'deniz': '🌊', 'sea': '🌊', 'ocean': '🌊',
+    'orman': '🌲', 'forest': '🌲', 'mantar': '🍄', 'mushroom': '🍄',
+    'elma': '🍎', 'apple': '🍎', 'muz': '🍌', 'banana': '🍌',
+    'çilek': '🍓', 'cilek': '🍓', 'strawberry': '🍓', 'üzüm': '🍇', 'uzum': '🍇', 'grapes': '🍇',
+    'portakal': '🍊', 'orange': '🍊', 'pizza': '🍕', 'hamburger': '🍔',
+    'dondurma': '🍦', 'ice cream': '🍦', 'pasta': '🎂', 'cake': '🎂',
+    'ekmek': '🍞', 'bread': '🍞', 'çikolata': '🍫', 'cikolata': '🍫', 'chocolate': '🍫',
+    'şeker': '🍬', 'seker': '🍬', 'candy': '🍬',
+    'ev': '🏠', 'house': '🏠', 'kale': '🏰', 'castle': '🏰', 'şato': '🏰', 'sato': '🏰',
+    'köprü': '🌉', 'kopru': '🌉', 'bridge': '🌉', 'okul': '🏫', 'school': '🏫',
+    'hastane': '🏥', 'hospital': '🏥', 'cami': '🕌', 'mosque': '🕌',
+    'kilise': '⛪', 'church': '⛪',
+    'kalp': '❤️', 'heart': '❤️', 'robot': '🤖',
+    'astronot': '👨‍🚀', 'astronaut': '👨‍🚀', 'peri': '🧚', 'fairy': '🧚',
+    'denizkızı': '🧜', 'mermaid': '🧜', 'kahraman': '🦸', 'superhero': '🦸',
+    'balon': '🎈', 'balloon': '🎈', 'hediye': '🎁', 'gift': '🎁',
+    'top': '⚽', 'ball': '⚽', 'futbol': '⚽', 'football': '⚽',
+    'gitar': '🎸', 'guitar': '🎸', 'piyano': '🎹', 'piano': '🎹',
+    'kalem': '✏️', 'pencil': '✏️', 'kitap': '📚', 'book': '📚',
+    'saat': '⏰', 'clock': '⏰', 'anahtar': '🔑', 'key': '🔑',
+    'ateş': '🔥', 'ates': '🔥', 'fire': '🔥',
+    'taç': '👑', 'tac': '👑', 'crown': '👑', 'elmas': '💎', 'diamond': '💎',
+    // İnsanlar ve figürler
+    'çocuk': '👧', 'cocuk': '👧', 'child': '👧', 'kid': '👧',
+    'bebek': '👶', 'baby': '👶',
+    'adam': '🧑', 'man': '👨', 'kadın': '👩', 'kadin': '👩', 'woman': '👩',
+    'aile': '👨‍👩‍👧', 'family': '👨‍👩‍👧',
+    'prenses': '👸', 'princess': '👸',
+    'prens': '🤴', 'prince': '🤴',
+    'dede': '👴', 'grandfather': '👴', 'grandpa': '👴', 'büyükbaba': '👴',
+    'nine': '👵', 'grandmother': '👵', 'grandma': '👵', 'büyükanne': '👵',
+    'kral': '🤴', 'king': '🤴', 'kraliçe': '👸', 'queen': '👸',
+    'süpermen': '🦸', 'superman': '🦸', 'süper kahraman': '🦸',
+    'ninja': '🥷', 'viking': '⚔️',
+    'kovboy': '🤠', 'cowboy': '🤠',
+    'spiderman': '🕷️', 'batman': '🦇',
+    // Daha fazla hayvan
+    'jaguar': '🐆', 'leopar': '🐆', 'leopard': '🐆', 'çita': '🐆', 'cheetah': '🐆',
+    'gergedan': '🦏', 'rhinoceros': '🦏', 'rhino': '🦏',
+    'su aygırı': '🦛', 'hippo': '🦛', 'hippopotamus': '🦛',
+    'deve': '🐫', 'camel': '🐫',
+    'lama': '🦙', 'llama': '🦙',
+    'zebra': '🦓',
+    'flamingo': '🦩',
+    'pelikan': '🦤',
+    'leylek': '🐦', 'stork': '🐦',
+    'kazayağı': '🦢', 'kuğu': '🦢', 'swan': '🦢',
+    'tavuskuşu': '🦚', 'peacock': '🦚',
+    'papağan': '🦜', 'parrot': '🦜',
+    'ahtapot': '🐙', 'octopus': '🐙',
+    'yengeç': '🦀', 'crab': '🦀',
+    'ıstakoz': '🦞', 'lobster': '🦞',
+    'karides': '🦐', 'shrimp': '🦐',
+    'midye': '🦪', 'oyster': '🦪',
+    'salyangoz': '🐌', 'snail': '🐌',
+    'solucan': '🪱', 'worm': '🪱',
+    'uğur böceği': '🐞', 'ladybug': '🐞',
+    'çekirge': '🦗', 'grasshopper': '🦗', 'cricket': '🦗',
+    'sivrisinek': '🦟', 'mosquito': '🦟',
+    'karınca': '🐜', 'karinca': '🐜', 'ant': '🐜',
+    // Objeler
+    'ampul': '💡', 'ampül': '💡', 'lightbulb': '💡', 'light bulb': '💡',
+    'mum': '🕯️', 'candle': '🕯️',
+    'şemsiye': '☂️', 'semsiye': '☂️', 'umbrella': '☂️',
+    'çanta': '👜', 'canta': '👜', 'bag': '👜',
+    'gözlük': '👓', 'gozluk': '👓', 'glasses': '👓',
+    'şapka': '🎩', 'sapka': '🎩', 'hat': '🎩',
+    'ayakkabı': '👟', 'ayakkabi': '👟', 'shoe': '👟', 'sneaker': '👟',
+    'elbise': '👗', 'dress': '👗', 'tişört': '👕', 'tisort': '👕', 'shirt': '👕',
+    'uçurtma': '🪁', 'ucurtma': '🪁', 'kite': '🪁',
+    'telefon': '📱', 'phone': '📱', 'televizyon': '📺', 'TV': '📺',
+    'radyo': '📻', 'radio': '📻', 'nota': '🎵',
+    'trompet': '🎺', 'trumpet': '🎺', 'keman': '🎻', 'violin': '🎻',
+    'davul': '🥁', 'drum': '🥁',
+    'basketbol': '🏀', 'basketball': '🏀',
+    'yüzük': '💍', 'ring': '💍',
+    'zar': '🎲', 'dice': '🎲', 'satranç': '♟️', 'chess': '♟️',
+    'oyun': '🎮', 'game': '🎮', 'boya': '🎨', 'paint': '🎨',
+    'fırça': '🖌️', 'firca': '🖌️', 'brush': '🖌️', 'makas': '✂️', 'scissors': '✂️',
+    'ayna': '🪞', 'mirror': '🪞', 'yatak': '🛏️', 'bed': '🛏️',
+    'sandalye': '🪑', 'chair': '🪑',
+    'tencere': '🍲', 'pot': '🍲', 'tabak': '🍽️', 'plate': '🍽️',
+    'bardak': '🥤', 'kahve': '☕', 'coffee': '☕', 'çay': '🍵', 'tea': '🍵',
+    'süt': '🥛', 'milk': '🥛', 'su': '💧', 'water': '💧',
+    'dünya': '🌍', 'world': '🌍', 'earth': '🌍', 'globe': '🌍',
+    'harita': '🗺️', 'map': '🗺️', 'pusula': '🧭', 'compass': '🧭',
+    'teleskop': '🔭', 'telescope': '🔭', 'mikroskop': '🔬', 'microscope': '🔬',
+    'pil': '🔋', 'battery': '🔋',
+    'çekiç': '🔨', 'cekic': '🔨', 'hammer': '🔨',
+    'bıçak': '🔪', 'bicak': '🔪', 'knife': '🔪',
+    'çivi': '🔩', 'civi': '🔩', 'bolt': '🔩',
+  };
+
+  const findEmoji = (text) => {
+    const lower = text.toLowerCase().trim();
+    // Exact match first
+    if (emojiMap[lower]) return emojiMap[lower];
+    // Only partial-match if the dictionary key is 4+ chars long AND the input contains it
+    // This prevents short keys like "at", "ay", "ev", "kar" matching inside unrelated words
+    for (const [key, emoji] of Object.entries(emojiMap)) {
+      if (key.length >= 4 && lower.includes(key)) return emoji;
+    }
+    return null; // No match found
+  };
+
+  const handleAiGenerate = () => {
+    if (!aiPrompt.trim() || isGenerating) return;
+    setIsGenerating(true);
+    
+    const emoji = findEmoji(aiPrompt.trim());
+    // If no match found, use a question mark so user knows it wasn't recognized
+    setSelectedShape(`__EMOJI__${emoji || '❓'}`);
+    setShapeTrigger(prev => prev + 1);
+    
+    setTimeout(() => {
+      setAiPrompt('');
+      setIsGenerating(false);
+      setIsPanelOpen(false);
+    }, 300);
+  };
+
+
   const shapes = [
     { id: 'square', label: 'Kare', icon: <SquareIcon /> },
     { id: 'rect', label: 'Dikdörtgen', icon: '▭' },
@@ -85,7 +245,7 @@ const ContextPanel = ({
     '#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff', '#ffffff', '#000000'
   ];
 
-  if (selectedTool !== 'shapes' && selectedTool !== 'brush' && selectedTool !== 'stickers' && selectedTool !== 'cars' && selectedTool !== 'mosques') return null;
+  if (!['shapes', 'stickers', 'cars', 'mosques', 'brush', 'ai', 'settings'].includes(selectedTool)) return null;
 
   return (
     <>
@@ -96,23 +256,46 @@ const ContextPanel = ({
           {selectedTool === 'stickers' && '⚽'} 
           {selectedTool === 'cars' && '🚗'}
           {selectedTool === 'mosques' && '🕌'}
-          {selectedTool === 'shapes' ? 'Şekil Ayarları' : selectedTool === 'brush' ? 'Fırça Ayarları' : selectedTool === 'cars' ? 'Araba Seçenekleri' : selectedTool === 'mosques' ? 'Cami Seçenekleri' : 'Çıkartma Ayarları'}
+          {selectedTool === 'ai' && <AutoAwesomeIcon sx={{ fontSize: 18 }} />}
+          {selectedTool === 'shapes' ? 'Şekil Ayarları' : selectedTool === 'brush' ? 'Fırça Ayarları' : selectedTool === 'cars' ? 'Araba Seçenekleri' : selectedTool === 'mosques' ? 'Cami Seçenekleri' : selectedTool === 'ai' ? 'Yapay Zeka Asistanı' : 'Çıkartma Ayarları'}
         </Typography>
 
-        <Divider sx={{ mb: 2, opacity: 0.1, backgroundColor: 'white' }} />
+        {selectedTool !== 'ai' && (
+        <>
+          <Typography variant="overline" sx={{ px: 1, mb: 1, opacity: 0.5, display: 'block' }}>
+            ARAÇ AYARLARI
+          </Typography>
 
-        {selectedTool !== 'stickers' && (
-             <Box sx={{ mb: 3 }}>
-                <Typography variant="caption" sx={{ opacity: 0.7, mb: 1, display: 'block' }}>
-                {selectedTool === 'shapes' ? 'Çizgi Kalınlığı' : 'Yazı Boyutu'}: {brushSize}px
-                </Typography>
-                <Slider 
-                size="small" value={brushSize} min={1} max={100} 
-                onChange={(e, val) => setBrushSize(val)}
-                sx={{ color: '#fbdf1c' }}
+          <Divider sx={{ mb: 2, opacity: 0.1, backgroundColor: 'white' }} />
+
+          {selectedTool !== 'stickers' && (
+               <Box sx={{ mb: 3 }}>
+                  <Typography variant="caption" sx={{ opacity: 0.7, mb: 1, display: 'block' }}>
+                  {selectedTool === 'shapes' ? 'Çizgi Kalınlığı' : 'Yazı Boyutu'}: {brushSize}px
+                  </Typography>
+                  <Slider 
+                      size="small" value={brushSize} min={!['brush', 'shapes'].includes(selectedTool) ? 12 : 1} max={72} 
+                      onChange={(e, val) => setBrushSize(val)}
+                      sx={{ color: '#fbdf1c' }}
+                  />
+               </Box>
+          )}
+
+          <div className="color-palette">
+            <Typography variant="caption" className="palette-label">Renk:</Typography>
+            <div className="palette-colors">
+              {colors.map(c => (
+                <div 
+                  key={c} 
+                  className={`palette-color ${selectedColor === c ? 'active' : ''}`} 
+                  style={{ backgroundColor: c }}
+                  onClick={() => setSelectedColor(c)}
                 />
-            </Box>
-        )}
+              ))}
+            </div>
+          </div>
+        </>
+      )}
 
         {selectedTool === 'shapes' && (
           <Box sx={{ mb: 3 }}>
@@ -143,6 +326,38 @@ const ContextPanel = ({
                     />
                 </Box>
             </>
+        )}
+
+        {selectedTool === 'ai' && (
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <Typography variant="body2" color="white" sx={{ fontSize: '0.8rem', opacity: 0.8 }}>
+              Ne istersin? (örn: Ördek, Şato, Balon). Senin için çizip getireceğim!
+            </Typography>
+            <TextField 
+              size="small" 
+              placeholder="Örn: Uzay gemisi..." 
+              value={aiPrompt}
+              onChange={(e) => setAiPrompt(e.target.value)}
+              fullWidth
+              sx={{ backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 1, 
+                    input: { color: 'white', '&::placeholder': { color: 'rgba(255,255,255,0.5)' } } }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && aiPrompt.trim()) {
+                  handleAiGenerate();
+                }
+              }}
+            />
+            <Button 
+              variant="contained" 
+              color="primary"
+              disabled={!aiPrompt.trim() || isGenerating}
+              onClick={() => handleAiGenerate()}
+              sx={{ fontWeight: 'bold' }}
+              startIcon={isGenerating ? <CircularProgress size={16} color="inherit" /> : <AutoAwesomeIcon />}
+            >
+              {isGenerating ? 'Çiziliyor...' : 'Oluştur'}
+            </Button>
+          </Box>
         )}
       </div>
 

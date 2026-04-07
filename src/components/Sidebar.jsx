@@ -8,14 +8,14 @@ import MoodIcon from '@mui/icons-material/Mood'; // Stickers
 import TitleIcon from '@mui/icons-material/Title'; // Text
 import FormatColorFillIcon from '@mui/icons-material/FormatColorFill'; // Fill
 import AddIcon from '@mui/icons-material/Add';
-import FolderIcon from '@mui/icons-material/Folder';
 import SaveIcon from '@mui/icons-material/Save';
-import SettingsIcon from '@mui/icons-material/Settings';
+import GridOnIcon from '@mui/icons-material/GridOn';
 import HelpIcon from '@mui/icons-material/Help';
+import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 
 import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
 
-const Sidebar = ({ selectedTool, setSelectedTool, isPanelOpen, setIsPanelOpen, handleNew, handleSave }) => {
+const Sidebar = ({ selectedTool, setSelectedTool, isPanelOpen, setIsPanelOpen, handleNew, handleSave, toggleCanvasMode }) => {
   const tools = [
     { id: 'select', icon: <NearMeIcon />, label: 'Seç' },
     { id: 'crop', icon: <CropIcon />, label: 'Kırp' },
@@ -24,6 +24,7 @@ const Sidebar = ({ selectedTool, setSelectedTool, isPanelOpen, setIsPanelOpen, h
     { id: 'stickers', icon: <MoodIcon />, label: 'Çıkartmalar' },
     { id: 'cars', icon: <DirectionsCarIcon />, label: 'Arabalar' },
     { id: 'mosques', icon: '🕌', label: 'Camiler' },
+    { id: 'ai', icon: <AutoAwesomeIcon />, label: 'Yapay Zeka' },
     { id: 'text', icon: <TitleIcon />, label: 'Metin' },
     { id: 'fill', icon: <FormatColorFillIcon />, label: 'Dolgu' },
   ];
@@ -35,9 +36,9 @@ const Sidebar = ({ selectedTool, setSelectedTool, isPanelOpen, setIsPanelOpen, h
       setIsPanelOpen(!isPanelOpen);
     } else {
       setSelectedTool(id);
-      // Auto-open panel for tools with lists (shapes, stickers, cars, mosques), 
+      // Auto-open panel for tools with lists (shapes, stickers, cars, mosques, ai), 
       // but keep it closed for drawing (brush) to keep screen clear.
-      if (['shapes', 'stickers', 'cars', 'mosques'].includes(id)) {
+      if (['shapes', 'stickers', 'cars', 'mosques', 'ai'].includes(id)) {
         setIsPanelOpen(true);
       } else {
         setIsPanelOpen(false);
@@ -67,19 +68,14 @@ const Sidebar = ({ selectedTool, setSelectedTool, isPanelOpen, setIsPanelOpen, h
             <AddIcon />
           </div>
         </Tooltip>
-        <Tooltip title="Aç" placement="right" TransitionComponent={Zoom}>
-          <div className="tool-button">
-            <FolderIcon />
-          </div>
-        </Tooltip>
         <Tooltip title="Kaydet (PC'ye İndir)" placement="right" TransitionComponent={Zoom}>
           <div className="tool-button" onClick={handleSave}>
             <SaveIcon />
           </div>
         </Tooltip>
-        <Tooltip title="Ayarlar" placement="right" TransitionComponent={Zoom}>
-          <div className="tool-button">
-            <SettingsIcon />
+        <Tooltip title="Zemin Modunu Değiştir (Kareli/Çizgili)" placement="right" TransitionComponent={Zoom}>
+          <div className="tool-button" onClick={toggleCanvasMode}>
+            <GridOnIcon />
           </div>
         </Tooltip>
         <Tooltip title="Yardım" placement="right" TransitionComponent={Zoom}>

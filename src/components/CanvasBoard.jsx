@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import * as fabric from 'fabric';
-import { Box, Paper, IconButton, Tooltip, Zoom, Typography } from '@mui/material';
+import { Box, Paper, IconButton, Tooltip, Zoom, Typography, CircularProgress } from '@mui/material';
 import UndoIcon from '@mui/icons-material/Undo';
 import RedoIcon from '@mui/icons-material/Redo';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -27,6 +27,7 @@ const CanvasBoard = ({
   sides,
   slope,
   isFillEnabled,
+  canvasMode,
   clearTrigger,
   saveTrigger,
   shapeTrigger,
@@ -36,6 +37,7 @@ const CanvasBoard = ({
   const [canvasInstance, setCanvasInstance] = useState(null);
   const [history, setHistory] = useState([]);
   const [redoStack, setRedoStack] = useState([]);
+  const [isCanvasLoading, setIsCanvasLoading] = useState(false);
 
   const saveState = () => {
     if (!canvasInstance) return;
@@ -69,10 +71,88 @@ const CanvasBoard = ({
       });
       text.set({ id: 'watermark' });
       canvas.add(text);
-      canvas.sendToBack(text);
+      // Fabric.js v7 uses sendObjectToBack instead of sendToBack
+      if (canvas.sendObjectToBack) {
+        canvas.sendObjectToBack(text);
+      } else if (canvas.sendToBack) {
+        canvas.sendToBack(text);
+      }
     } catch (err) {
       console.error("Watermark hatasi:", err);
     }
+  };
+
+  const getWrapperBackgroundStyle = (mode) => {
+    if (mode === 'grid') {
+      return {
+        backgroundColor: 'white',
+        backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 29px, rgba(148,163,184,0.3) 29px, rgba(148,163,184,0.3) 30px), repeating-linear-gradient(90deg, transparent, transparent 29px, rgba(148,163,184,0.3) 29px, rgba(148,163,184,0.3) 30px)',
+        backgroundSize: '30px 30px',
+      };
+    }
+    if (mode === 'lines') {
+      return {
+        backgroundColor: 'white',
+        backgroundImage: 'repeating-linear-gradient(rgba(148,163,184,0.3) 0px, rgba(148,163,184,0.3) 1px, transparent 1px, transparent 40px)',
+        backgroundSize: '100% 40px',
+      };
+    }
+    return {
+      backgroundColor: 'white',
+      backgroundImage: 'none',
+    };
+  };
+
+  const applyCanvasBackground = (canvas) => {
+    if (!canvas) return;
+    canvas.backgroundColor = 'transparent';
+    canvas.renderAll();
+  };
+
+  const getExportBackground = (mode) => {
+    if (mode === 'white') return 'white';
+    
+    const patternCanvas = document.createElement('canvas');
+    const ctx = patternCanvas.getContext('2d');
+    
+    if (mode === 'grid') {
+      patternCanvas.width = 30;
+      patternCanvas.height = 30;
+      ctx.fillStyle = 'white';
+      ctx.fillRect(0, 0, 30, 30);
+      ctx.strokeStyle = 'rgba(148,163,184,0.3)';
+      ctx.lineWidth = 1;
+      
+      // Bottom line
+      ctx.beginPath();
+      ctx.moveTo(0, 29.5);
+      ctx.lineTo(30, 29.5);
+      ctx.stroke();
+      
+      // Right line
+      ctx.beginPath();
+      ctx.moveTo(29.5, 0);
+      ctx.lineTo(29.5, 30);
+      ctx.stroke();
+    } else if (mode === 'lines') {
+      patternCanvas.width = 40;
+      patternCanvas.height = 40;
+      ctx.fillStyle = 'white';
+      ctx.fillRect(0, 0, 40, 40);
+      ctx.strokeStyle = 'rgba(148,163,184,0.3)';
+      ctx.lineWidth = 1;
+
+      // Bottom line
+      ctx.beginPath();
+      ctx.moveTo(0, 0.5);
+      ctx.lineTo(40, 0.5);
+      ctx.stroke();
+    }
+    
+    return new fabric.Pattern({
+      source: patternCanvas,
+      repeat: 'repeat'
+    });
   };
 
   useEffect(() => {
@@ -85,13 +165,14 @@ const CanvasBoard = ({
     const canvas = new fabric.Canvas(canvasRef.current, {
       width: initWidth,
       height: initHeight,
-      backgroundColor: 'white',
       isDrawingMode: selectedTool === 'brush',
       allowTouchScrolling: true,
+      backgroundColor: 'transparent'
     });
     canvas.freeDrawingBrush = new fabric.PencilBrush(canvas);
     canvas.freeDrawingBrush.color = selectedColor;
     canvas.freeDrawingBrush.width = brushSize;
+    applyCanvasBackground(canvas);
     addWatermark(canvas);
     
     // Setup window resize listener
@@ -201,7 +282,7 @@ const CanvasBoard = ({
       }
       canvasInstance.on('object:modified', saveState);
     }
-  }, [selectedTool, selectedColor, brushSize, canvasInstance]);
+  }, [selectedTool, selectedColor, brushSize, canvasInstance, canvasMode]);
 
   useEffect(() => {
     if (!canvasInstance) return;
@@ -234,17 +315,25 @@ const CanvasBoard = ({
   useEffect(() => {
     if (canvasInstance && clearTrigger > 0) {
       canvasInstance.clear();
-      canvasInstance.backgroundColor = 'white';
+      applyCanvasBackground(canvasInstance);
       addWatermark(canvasInstance);
       canvasInstance.renderAll();
       setHistory([JSON.stringify(canvasInstance.toJSON())]);
       setRedoStack([]);
     }
-  }, [clearTrigger]);
+  }, [clearTrigger, canvasInstance]);
 
   useEffect(() => {
     if (canvasInstance && saveTrigger > 0) {
+      // Temporarily apply the visual background pattern directly to the canvas for exporting
+      canvasInstance.backgroundColor = getExportBackground(canvasMode);
+      canvasInstance.renderAll();
+      
       const dataURL = canvasInstance.toDataURL({ format: 'png', quality: 1 });
+      
+      // Restore the transparent background for editing
+      applyCanvasBackground(canvasInstance);
+      
       const link = document.createElement('a');
       link.download = `boyama_${Date.now()}.png`;
       link.href = dataURL;
@@ -252,7 +341,7 @@ const CanvasBoard = ({
       link.click();
       document.body.removeChild(link);
     }
-  }, [saveTrigger]);
+  }, [saveTrigger, canvasMode, canvasInstance]);
 
 
 
@@ -275,9 +364,31 @@ const CanvasBoard = ({
   const addShape = async (type) => {
     if (!canvasInstance) return;
     let shape;
+    const canvasW = canvasInstance.getWidth ? canvasInstance.getWidth() : canvasInstance.width;
+    const canvasH = canvasInstance.getHeight ? canvasInstance.getHeight() : canvasInstance.height;
+
+    // Handle AI emoji result (offline, instant)
+    if (typeof type === 'string' && type.startsWith('__EMOJI__')) {
+        const emoji = type.replace('__EMOJI__', '');
+        const emojiText = new fabric.IText(emoji, {
+            left: canvasW / 2,
+            top: canvasH / 2,
+            fontSize: 180,
+            originX: 'center',
+            originY: 'center',
+            selectable: true,
+            editable: false,
+        });
+        canvasInstance.add(emojiText);
+        canvasInstance.setActiveObject(emojiText);
+        canvasInstance.renderAll();
+        saveState();
+        return;
+    }
+
     const common = {
-        left: canvasInstance.width / 2,
-        top: canvasInstance.height / 2,
+        left: canvasW / 2,
+        top: canvasH / 2,
         fill: isFillEnabled ? selectedColor : 'transparent',
         stroke: selectedColor,
         strokeWidth: brushSize,
@@ -285,29 +396,87 @@ const CanvasBoard = ({
         originY: 'center',
     };
 
-    // Handle Image Assets (like Cars)
-    if (typeof type === 'string' && type.includes('.png')) {
+    // Handle Image Assets (like Cars) or External Images (like AI)
+    if (typeof type === 'string' && (type.includes('.png') || type.startsWith('http'))) {
         try {
+            setIsCanvasLoading(true);
+            let finalUrl = type;
+            
+            // If it's an external HTTP URL (like Pollinations), fetch it as a blob first
+            // to bypass HTMLImageElement generic CORS/redirect rendering bugs
+            if (type.startsWith('http')) {
+               const controller = new AbortController();
+               const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
+               try {
+                 const response = await fetch(type, { signal: controller.signal });
+                 clearTimeout(timeoutId);
+                 if (!response.ok) {
+                     throw new Error(response.status === 429 ? "Yapay zeka çok meşgul, lütfen bekle." : `HTTP ${response.status} hatası.`);
+                 }
+                 const blob = await response.blob();
+                 if (blob.size < 1000) {
+                     throw new Error("Görsel oluşturulamadı, tekrar dene.");
+                 }
+                 finalUrl = URL.createObjectURL(blob);
+               } catch(fetchErr) {
+                 clearTimeout(timeoutId);
+                 if (fetchErr.name === 'AbortError') {
+                     throw new Error("Zaman aşımı - yapay zeka çok yavaş yanıt verdi.");
+                 }
+                 throw fetchErr;
+               }
+            }
+
             const FabricImageClass = fabric.FabricImage || fabric.Image;
-            shape = await FabricImageClass.fromURL(type);
-            shape.set(common);
-            const scale = Math.min((canvasInstance.width * 0.4) / shape.width, (canvasInstance.height * 0.4) / shape.height);
+            shape = await FabricImageClass.fromURL(finalUrl);
+            
+            // Blend mode multiply makes white completely transparent!
+            shape.set({
+              ...common,
+              globalCompositeOperation: 'multiply'
+            });
+            const scale = Math.min((canvasW * 0.4) / shape.width, (canvasH * 0.4) / shape.height);
             shape.scale(scale);
             canvasInstance.add(shape);
             canvasInstance.setActiveObject(shape);
             canvasInstance.renderAll();
             saveState();
-            return;
+            // Close the panel after successful AI generation
+            if (selectedTool === 'ai') {
+                setIsPanelOpen(false);
+            }
         } catch (err) {
             console.error("Failed to load image:", err);
-            type = '🚗'; // Fallback to emoji
+            try {
+                if (selectedTool === 'ai') {
+                    const errorMsg = (err?.message || 'Bağlantı hatası').substring(0, 50);
+                    const errText = new fabric.Text(errorMsg, { 
+                        ...common, fill: '#cc0000', fontSize: 22, 
+                        textAlign: 'center', fontFamily: 'sans-serif' 
+                    });
+                    canvasInstance.add(errText);
+                    canvasInstance.renderAll();
+                }
+            } catch(e2) {
+                console.error("Error in error handler:", e2);
+            }
+            // Always exit cleanly; don't propagate
+            setIsCanvasLoading(false);
+            return;
+        } finally {
+            setIsCanvasLoading(false);
+        }
+        if (typeof type !== 'string' || (!type.includes('.png') && !type.startsWith('http'))) {
+            // It fell back to emoji, let it continue to the shape generator
+        } else {
+            return;
         }
     }
 
     if (TEMPLATES[type]) {
         shape = await loadTemplateSVG(type);
         shape.set(common);
-        const scale = Math.min((canvasInstance.width * 0.6) / shape.width, (canvasInstance.height * 0.6) / shape.height);
+        const scale = Math.min((canvasW * 0.6) / shape.width, (canvasH * 0.6) / shape.height);
         shape.scale(scale);
     } else {
         switch (type) {
@@ -352,10 +521,10 @@ const CanvasBoard = ({
   };
 
   useEffect(() => {
-    if (canvasInstance && (selectedTool === 'shapes' || selectedTool === 'stickers' || selectedTool === 'cars' || selectedTool === 'mosques') && selectedShape && shapeTrigger > 0) {
+    if (canvasInstance && (selectedTool === 'shapes' || selectedTool === 'stickers' || selectedTool === 'cars' || selectedTool === 'mosques' || selectedTool === 'ai') && selectedShape && shapeTrigger > 0) {
         addShape(selectedShape);
     }
-  }, [shapeTrigger]);
+  }, [shapeTrigger, selectedTool, selectedShape, canvasInstance]);
 
   const handleUndo = async () => {
     if (history.length > 1 && canvasInstance) {
@@ -449,6 +618,14 @@ const CanvasBoard = ({
 
   return (
     <Box sx={{ position: 'relative', height: '100%' }} id="canvas-container">
+      {/* Loading overlay - outside Paper to avoid Fabric.js DOM conflict */}
+      {isCanvasLoading && (
+        <Box sx={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(255,255,255,0.85)', zIndex: 9999, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', borderRadius: 4 }}>
+          <CircularProgress size={60} color="primary" />
+          <Typography variant="h6" sx={{ mt: 2, fontWeight: 600, color: '#333' }}>Yapay Zeka Çiziyor...</Typography>
+          <Typography variant="body2" sx={{ mt: 1, color: '#666' }}>Bu işlem 10-30 saniye sürebilir</Typography>
+        </Box>
+      )}
       <Paper elevation={0} sx={{ overflow: 'hidden', borderRadius: 4, height: '100%', display: 'flex', flexDirection: 'column', boxShadow: '0 4px 20px rgba(0,0,0,0.05)', border: '1px solid #e2e8f0' }}>
         <Box sx={{ p: 2, borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'white' }}>
           <Typography variant="caption" sx={{ fontWeight: 600, color: '#64748b', textTransform: 'uppercase' }}>
@@ -458,10 +635,12 @@ const CanvasBoard = ({
             <Tooltip title="Geri Al" TransitionComponent={Zoom}><IconButton size="small" color="primary" onClick={handleUndo} disabled={history.length <= 1}><UndoIcon fontSize="small" /></IconButton></Tooltip>
             <Tooltip title="İleri Al" TransitionComponent={Zoom}><IconButton size="small" color="primary" onClick={handleRedo} disabled={redoStack.length === 0}><RedoIcon fontSize="small" /></IconButton></Tooltip>
             <Tooltip title="Seçileni Sil" TransitionComponent={Zoom}><IconButton size="small" color="warning" onClick={deleteSelected}><DeleteIcon fontSize="small" /></IconButton></Tooltip>
-            <Tooltip title="Tümünü Temizle" TransitionComponent={Zoom}><IconButton size="small" color="error" onClick={() => { if(window.confirm('Tüm sayfayı temizlemek istediğinize emin misiniz?')) { canvasInstance.clear(); canvasInstance.backgroundColor = 'white'; addWatermark(canvasInstance); saveState(); } }}><DeleteIcon fontSize="small" /></IconButton></Tooltip>
+            <Tooltip title="Tümünü Temizle" TransitionComponent={Zoom}><IconButton size="small" color="error" onClick={() => { if(window.confirm('Tüm sayfayı temizlemek istediğinize emin misiniz?')) { canvasInstance.clear(); applyCanvasBackground(canvasInstance); addWatermark(canvasInstance); saveState(); } }}><DeleteIcon fontSize="small" /></IconButton></Tooltip>
           </Box>
         </Box>
-        <Box sx={{ flex: 1, position: 'relative', backgroundColor: '#f8fafc', overflow: 'auto' }}><canvas ref={canvasRef} /></Box>
+        <Box sx={{ flex: 1, position: 'relative', overflow: 'auto', ...getWrapperBackgroundStyle(canvasMode) }}>
+           <canvas ref={canvasRef} />
+        </Box>
       </Paper>
     </Box>
   );
