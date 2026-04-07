@@ -318,22 +318,33 @@ h1, h2, h3, h4, h5, h6 {
     top: auto;
     bottom: 0;
     left: 0;
-    padding: 0;
+    padding: 0 10px;
     border-right: none;
     border-top: 2px solid var(--primary);
-    justify-content: space-around;
+    justify-content: flex-start;
     background-color: #1e1e2e;
     box-shadow: 0 -5px 15px rgba(0,0,0,0.3);
+    overflow-x: auto;
+    overflow-y: hidden;
+    white-space: nowrap;
+    display: flex;
+    gap: 15px;
+    -ms-overflow-style: none;
+    scrollbar-width: none;
   }
+  
+  .sidebar::-webkit-scrollbar { display: none; }
 
   .sidebar-tools {
     flex-direction: row;
-    width: 100%;
-    gap: 5px;
+    width: auto;
+    gap: 10px;
     align-items: center;
-    justify-content: space-evenly;
+    justify-content: flex-start;
     padding: 0;
     overflow: visible;
+    flex-shrink: 0;
+    display: flex;
   }
   
   /* Sadece üst kısımdaki palet emojisini gizle, menüyü değil */
@@ -342,7 +353,12 @@ h1, h2, h3, h4, h5, h6 {
   }
 
   .sidebar-bottom {
-      display: none !important;
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      gap: 10px;
+      margin-top: 0;
+      flex-shrink: 0;
   }
 
   .tool-button {
