@@ -1,10 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react';
 import * as fabric from 'fabric';
-import { Box, Paper, IconButton, Tooltip, Zoom, Typography, CircularProgress } from '@mui/material';
+import { Box, Paper, IconButton, Tooltip, Zoom, Typography, CircularProgress, Chip } from '@mui/material';
 import UndoIcon from '@mui/icons-material/Undo';
 import RedoIcon from '@mui/icons-material/Redo';
 import DeleteIcon from '@mui/icons-material/Delete';
-import DownloadIcon from '@mui/icons-material/Download';
+import ZoomInIcon from '@mui/icons-material/ZoomIn';
+import ZoomOutIcon from '@mui/icons-material/ZoomOut';
+import ZoomOutMapIcon from '@mui/icons-material/ZoomOutMap';
 
 const TEMPLATES = {
   house: `<svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg"><path d="M506.5 225.8l-224-213.3c-14.7-14-38.3-14-53 0l-224 213.3c-9.1 8.6-10.4 22.7-2.9 32.8 7.5 10.2 21.6 12 31.4 4.3l17.4-16.6v219c0 23.6 19.1 42.7 42.7 42.7h256c23.6 0 42.7-19.1 42.7-42.7v-219l17.4 16.6c9.8 7.7 23.9 5.9 31.4-4.3 7.5-10.1 6.2-24.2-2.9-32.8zM384 469.3H128V240l128-121.9L384 240v229.3z" /></svg>`,
@@ -38,6 +40,7 @@ const CanvasBoard = ({
   const [history, setHistory] = useState([]);
   const [redoStack, setRedoStack] = useState([]);
   const [isCanvasLoading, setIsCanvasLoading] = useState(false);
+  const [zoomLevel, setZoomLevel] = useState(100); // percentage
 
   const saveState = () => {
     if (!canvasInstance) return;
@@ -201,6 +204,20 @@ const CanvasBoard = ({
     };
     window.addEventListener('resize', handleResize);
     setCanvasInstance(canvas);
+
+    // Mouse wheel zoom (Fabric v7 requires new fabric.Point)
+    canvas.on('mouse:wheel', (opt) => {
+      const delta = opt.e.deltaY;
+      let zoom = canvas.getZoom();
+      zoom *= 0.999 ** delta;
+      if (zoom > 5) zoom = 5;
+      if (zoom < 0.1) zoom = 0.1;
+      const point = new fabric.Point(opt.e.offsetX, opt.e.offsetY);
+      canvas.zoomToPoint(point, zoom);
+      setZoomLevel(Math.round(zoom * 100));
+      opt.e.preventDefault();
+      opt.e.stopPropagation();
+    });
 
     return () => { 
       canvas.dispose(); 
@@ -556,6 +573,34 @@ const CanvasBoard = ({
     }
   };
 
+  const handleZoomIn = () => {
+    if (!canvasInstance) return;
+    const zoom = Math.min(canvasInstance.getZoom() * 1.25, 5);
+    const w = canvasInstance.getWidth ? canvasInstance.getWidth() : canvasInstance.width;
+    const h = canvasInstance.getHeight ? canvasInstance.getHeight() : canvasInstance.height;
+    canvasInstance.zoomToPoint(new fabric.Point(w / 2, h / 2), zoom);
+    setZoomLevel(Math.round(zoom * 100));
+    canvasInstance.renderAll();
+  };
+
+  const handleZoomOut = () => {
+    if (!canvasInstance) return;
+    const zoom = Math.max(canvasInstance.getZoom() / 1.25, 0.1);
+    const w = canvasInstance.getWidth ? canvasInstance.getWidth() : canvasInstance.width;
+    const h = canvasInstance.getHeight ? canvasInstance.getHeight() : canvasInstance.height;
+    canvasInstance.zoomToPoint(new fabric.Point(w / 2, h / 2), zoom);
+    setZoomLevel(Math.round(zoom * 100));
+    canvasInstance.renderAll();
+  };
+
+  const handleZoomReset = () => {
+    if (!canvasInstance) return;
+    canvasInstance.setZoom(1);
+    canvasInstance.absolutePan(new fabric.Point(0, 0));
+    setZoomLevel(100);
+    canvasInstance.renderAll();
+  };
+
   const deleteSelected = () => {
     if (!canvasInstance) return;
     const activeObjects = canvasInstance.getActiveObjects();
@@ -627,11 +672,23 @@ const CanvasBoard = ({
         </Box>
       )}
       <Paper elevation={0} sx={{ overflow: 'hidden', borderRadius: 4, height: '100%', display: 'flex', flexDirection: 'column', boxShadow: '0 4px 20px rgba(0,0,0,0.05)', border: '1px solid #e2e8f0' }}>
-        <Box sx={{ p: 2, borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'white' }}>
+        <Box sx={{ p: 1.5, borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'white' }}>
           <Typography variant="caption" sx={{ fontWeight: 600, color: '#64748b', textTransform: 'uppercase' }}>
               BİLGİN CANVAS: {selectedTool.toUpperCase()} MODE
           </Typography>
-          <Box sx={{ display: 'flex', gap: 1 }}>
+          <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
+            {/* Zoom controls */}
+            <Tooltip title="Uzaklaştır" TransitionComponent={Zoom}><IconButton size="small" sx={{ color: '#64748b' }} onClick={handleZoomOut}><ZoomOutIcon fontSize="small" /></IconButton></Tooltip>
+            <Chip 
+              label={`${zoomLevel}%`} 
+              size="small" 
+              onClick={handleZoomReset}
+              sx={{ fontSize: '0.7rem', height: 22, cursor: 'pointer', fontWeight: 600, color: zoomLevel !== 100 ? '#fbdf1c' : '#64748b', backgroundColor: zoomLevel !== 100 ? '#1e293b' : '#f1f5f9' }}
+            />
+            <Tooltip title="Yaklaştır" TransitionComponent={Zoom}><IconButton size="small" sx={{ color: '#64748b' }} onClick={handleZoomIn}><ZoomInIcon fontSize="small" /></IconButton></Tooltip>
+            <Tooltip title="Sıfırla (100%)" TransitionComponent={Zoom}><IconButton size="small" sx={{ color: '#64748b' }} onClick={handleZoomReset}><ZoomOutMapIcon fontSize="small" /></IconButton></Tooltip>
+            <Box sx={{ width: 1, height: 20, backgroundColor: '#e2e8f0', mx: 0.5 }} />
+            {/* Edit controls */}
             <Tooltip title="Geri Al" TransitionComponent={Zoom}><IconButton size="small" color="primary" onClick={handleUndo} disabled={history.length <= 1}><UndoIcon fontSize="small" /></IconButton></Tooltip>
             <Tooltip title="İleri Al" TransitionComponent={Zoom}><IconButton size="small" color="primary" onClick={handleRedo} disabled={redoStack.length === 0}><RedoIcon fontSize="small" /></IconButton></Tooltip>
             <Tooltip title="Seçileni Sil" TransitionComponent={Zoom}><IconButton size="small" color="warning" onClick={deleteSelected}><DeleteIcon fontSize="small" /></IconButton></Tooltip>
