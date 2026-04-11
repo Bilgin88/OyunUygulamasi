@@ -255,7 +255,20 @@ const CanvasBoard = ({
       } else if (selectedTool === 'fill') {
         canvasInstance.on('mouse:down', (options) => {
           if (options.target) {
-            options.target.set('fill', selectedColor);
+            // Eğer resimse (Araba, PNG vs), filtresini güncelle
+            if (options.target.type === 'image' || options.target.type === 'fabric-image') {
+               options.target.filters = [
+                  new fabric.Image.filters.BlendColor({
+                     color: selectedColor,
+                     mode: 'tint',
+                     alpha: 0.65
+                  })
+               ];
+               options.target.applyFilters();
+            } else {
+               // Normal vektör şekiller için
+               options.target.set('fill', selectedColor);
+            }
             canvasInstance.renderAll();
             saveState();
           }
@@ -444,10 +457,24 @@ const CanvasBoard = ({
                }
             }
 
+            // Yerel assets yoluysa BASE_URL ekleyerek güvenli hale getir
+            if (!finalUrl.startsWith('http')) {
+               finalUrl = import.meta.env.BASE_URL + finalUrl.replace(/^[\.\/]+/, '');
+            }
+
             const FabricImageClass = fabric.FabricImage || fabric.Image;
             shape = await FabricImageClass.fromURL(finalUrl);
             
-            // Blend mode multiply makes white completely transparent!
+            // Seçili rengi (Sarı vs) arabaya filtre olarak uygula
+            if (shape.filters && isFillEnabled) {
+               shape.filters.push(new fabric.Image.filters.BlendColor({
+                   color: selectedColor,
+                   mode: 'tint',
+                   alpha: 0.65 // Arabanın hatları kaybolmasın diye şeffaflık
+               }));
+               shape.applyFilters();
+            }
+
             shape.set({
               ...common,
               globalCompositeOperation: 'multiply'

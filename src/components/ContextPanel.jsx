@@ -242,7 +242,8 @@ const ContextPanel = ({
   ];
 
   const colors = [
-    '#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff', '#ffffff', '#000000'
+    '#EF4444', '#F97316', '#F59E0B', '#10B981', '#06B6D4', '#3B82F6', '#6366F1', '#A855F7', '#EC4899', 
+    '#FFFFFF', '#94A3B8', '#1E293B', '#8b4513'
   ];
 
   if (!['shapes', 'stickers', 'cars', 'mosques', 'brush', 'ai', 'settings'].includes(selectedTool)) return null;

@@ -45,8 +45,8 @@ const THEMES = {
     label: '🔴 Kırmızı',
     primary:    '#dc2626',
     primaryHov: '#b91c1c',
-    bgSidebar:  '#450a0a',
-    bgPanel:    '#7f1d1d',
+    bgSidebar:  '#7f1d1d', // Daha belirgin kırmızı
+    bgPanel:    '#991b1b',
     bgApp:      '#fff5f5',
     border:     '#991b1b',
     toolActive: '#dc2626',
@@ -58,8 +58,8 @@ const THEMES = {
     label: '🔵 Mavi',
     primary:    '#2563eb',
     primaryHov: '#1d4ed8',
-    bgSidebar:  '#0f172a',
-    bgPanel:    '#1e3a8a',
+    bgSidebar:  '#1e3a8a', // Daha belirgin mavi
+    bgPanel:    '#1e40af',
     bgApp:      '#eff6ff',
     border:     '#1e40af',
     toolActive: '#2563eb',
@@ -71,8 +71,8 @@ const THEMES = {
     label: '🟢 Yeşil',
     primary:    '#059669',
     primaryHov: '#047857',
-    bgSidebar:  '#022c22',
-    bgPanel:    '#064e3b',
+    bgSidebar:  '#064e3b', // Daha belirgin yeşil
+    bgPanel:    '#065f46',
     bgApp:      '#f0fdf4',
     border:     '#065f46',
     toolActive: '#059669',
@@ -444,6 +444,7 @@ function App() {
             selectedShape={selectedShape}
             setSelectedShape={setSelectedShape}
             selectedColor={selectedColor}
+            setSelectedColor={setSelectedColor}
             brushSize={brushSize}
             setBrushSize={setBrushSize}
             sides={sides}
