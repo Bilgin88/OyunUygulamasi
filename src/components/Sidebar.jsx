@@ -1,7 +1,7 @@
-import React from 'react';
-import { Tooltip, Zoom } from '@mui/material';
+import React, { useState } from 'react';
+import { Tooltip, Zoom, Dialog, DialogTitle, DialogContent, Box, Typography } from '@mui/material';
 import NearMeIcon from '@mui/icons-material/NearMe'; // Select
-import CropIcon from '@mui/icons-material/Crop'; // Crop
+import PaletteIcon from '@mui/icons-material/Palette'; // Theme
 import CreateIcon from '@mui/icons-material/Create'; // Pencil
 import StarIcon from '@mui/icons-material/Star'; // Shapes
 import MoodIcon from '@mui/icons-material/Mood'; // Stickers
@@ -15,10 +15,12 @@ import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 
 import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
 
-const Sidebar = ({ selectedTool, setSelectedTool, isPanelOpen, setIsPanelOpen, handleNew, handleSave, toggleCanvasMode }) => {
+const Sidebar = ({ selectedTool, setSelectedTool, isPanelOpen, setIsPanelOpen, handleNew, handleSave, toggleCanvasMode, THEMES, selectedThemeKey, handleThemeChange }) => {
+  const [themeDbOpen, setThemeDbOpen] = useState(false);
+
   const tools = [
     { id: 'select', icon: <NearMeIcon />, label: 'Seç' },
-    { id: 'crop', icon: <CropIcon />, label: 'Kırp' },
+    { id: 'theme', icon: <PaletteIcon />, label: 'Tema Seçici' },
     { id: 'brush', icon: <CreateIcon />, label: 'Fırça' },
     { id: 'shapes', icon: <StarIcon />, label: 'Şekiller' },
     { id: 'stickers', icon: <MoodIcon />, label: 'Çıkartmalar' },
@@ -32,6 +34,11 @@ const Sidebar = ({ selectedTool, setSelectedTool, isPanelOpen, setIsPanelOpen, h
 
 
   const handleToolClick = (id) => {
+    if (id === 'theme') {
+      setThemeDbOpen(true);
+      return;
+    }
+    
     if (selectedTool === id) {
       setIsPanelOpen(!isPanelOpen);
     } else {
@@ -84,6 +91,30 @@ const Sidebar = ({ selectedTool, setSelectedTool, isPanelOpen, setIsPanelOpen, h
           </div>
         </Tooltip>
       </div>
+
+      <Dialog open={themeDbOpen} onClose={() => setThemeDbOpen(false)} PaperProps={{ sx: { borderRadius: 3, p: 1 } }}>
+        <DialogTitle sx={{ pb: 1, textAlign: 'center', fontWeight: 'bold' }}>Tema Seç</DialogTitle>
+        <DialogContent>
+          <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', flexWrap: 'wrap', pt: 1 }}>
+            {THEMES && Object.entries(THEMES).map(([key, t]) => (
+              <Tooltip key={key} title={t.label} TransitionComponent={Zoom}>
+                <Box
+                  onClick={() => { handleThemeChange(key); setThemeDbOpen(false); }}
+                  sx={{
+                    width: 48, height: 48, borderRadius: '50%',
+                    background: t.primary,
+                    cursor: 'pointer',
+                    border: selectedThemeKey === key ? `4px solid ${t.bgSidebar}` : '2px solid #e2e8f0',
+                    boxShadow: selectedThemeKey === key ? `0 0 0 3px ${t.primary}` : 'none',
+                    transition: 'all 0.2s',
+                    '&:hover': { transform: 'scale(1.1)' },
+                  }}
+                />
+              </Tooltip>
+            ))}
+          </Box>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

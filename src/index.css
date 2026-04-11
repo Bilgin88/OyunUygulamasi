@@ -135,9 +135,9 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .tool-button.active {
-  background-color: var(--primary);
-  color: #1e1e2e;
-  box-shadow: 0 0 15px rgba(251, 223, 28, 0.3);
+  background-color: var(--tool-active, var(--primary));
+  color: var(--active-txt, #1e1e2e);
+  box-shadow: 0 0 15px var(--tool-shadow, rgba(251,223,28,0.3));
 }
 
 .tool-button.active::after {
@@ -220,8 +220,8 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .palette-color.active {
-  border: 3px solid #1e1e2e;
-  box-shadow: 0 0 0 2px #fbdf1c;
+  border: 3px solid var(--bg-sidebar, #1e1e2e);
+  box-shadow: 0 0 0 2px var(--primary);
 }
 
 .canvas-wrapper {
